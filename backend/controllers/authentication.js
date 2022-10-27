@@ -1,7 +1,7 @@
 const router = require('express').Router()
 const db = require("../models")
 const bcrypt = require('bcrypt')
-const jwt = require('jwt') 
+const jwt = require('jwt')
 const { User } = db
 
 router.post('/', async (req, res) => {
@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
         })
     } else {
         const result = await jwt.encode(process.env.JWT_SECRET, { id: user.userId })
-        res.json({ user, token: result.value  })
+        res.json({ user, token: result.value })
     }
 
     console.log(user)
@@ -23,16 +23,29 @@ router.post('/', async (req, res) => {
 
 ___
 router.get('/profile', async (req, res) => {
-    // try {
-    //     let user = await User.findOne({
-    //         where: {
-    //             userId: __  //this __ should change at some point
-    //         }
-    //     })
-    //     res.json(user)
-    // } catch {
-    //     res.json(null)
-    // }
+    try {
+        // Split the authorization header into [ "Bearer", "TOKEN" ]:
+        const [authenticationMethod, token] = req.headers.authorization.split(' ')
+
+        // Only handle "Bearer" authorization for now 
+        //  (we could add other authorization strategies later):
+        if (authenticationMethod == 'Bearer') {
+
+            // Decode the JWT
+            const result = await jwt.decode(process.env.JWT_SECRET, token)
+
+            // Get the logged in user's id from the payload
+            const { id } = result.value
+            let user = await User.findOne({
+                where: {
+                    userId: id
+                }
+            })
+            res.json(user)
+        }
+    } catch {
+        res.json(null)
+    }
 })
 
 
